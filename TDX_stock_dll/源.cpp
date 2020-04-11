@@ -140,8 +140,11 @@ void PEAK_BARS_JUNXIAN(int DataLen, float* pfOUT, float* VAL, float* JUNXIAN)
 	}
 }
 
-void TROUGH_BARS_ZIG(int DataLen, float* pfOUT, float* VAL)
+void TROUGH_BARS_ZIG(int DataLen, float* pfOUT, float* VAL, float* criticalPoint)
 {
+	// criticalPoint是指： 判定ZIG拐点 的那个决策点，也就是比拐点 要晚一点的那个位置，实现了5个点的拐点幅度
+	bool criticalPnt = ((int)*criticalPoint == 1);
+
 	memset(pfOUT, -1, DataLen * sizeof(float));
 
 	float possibleBot(VAL[0]), possibleTop(VAL[0]);
@@ -193,11 +196,13 @@ void TROUGH_BARS_ZIG(int DataLen, float* pfOUT, float* VAL)
 			{
 				posTopBars = i;
 				possibleTop = VAL[i];
-				pfOUT[i] = i - curBotBars;
+				if (!criticalPnt)
+					pfOUT[i] = i - curBotBars;
 			}
 			else 
 			{
-				pfOUT[i] = i - curBotBars;
+				if (!criticalPnt)
+					pfOUT[i] = i - curBotBars;
 				if (VAL[i] <= possibleTop*(1 - (float)ZIG_PERCENT / 100))
 				{
 					curTopBars = posTopBars;
@@ -215,17 +220,24 @@ void TROUGH_BARS_ZIG(int DataLen, float* pfOUT, float* VAL)
 			{
 				posBotBars = i;
 				possibleBot = VAL[i];
-				pfOUT[i] = i - curBotBars;
+				if (!criticalPnt)
+					pfOUT[i] = i - curBotBars;
 			}
 			else
 			{
 				
 				if (VAL[i] >= possibleBot*(1 + (float)ZIG_PERCENT / 100))
 				{
-					for (int j = i; j >= posBotBars; j--)
+					if (criticalPnt)
+						pfOUT[i] = 0;
+					else 
 					{
-						pfOUT[j] = j - posBotBars;
+						for (int j = i; j >= posBotBars; j--)
+						{
+							pfOUT[j] = j - posBotBars;
+						}
 					}
+
 					curBotBars = posBotBars;
 					posBotBars = -1;
 					possibleTop = VAL[i];
@@ -235,7 +247,8 @@ void TROUGH_BARS_ZIG(int DataLen, float* pfOUT, float* VAL)
 				}
 				else
 				{
-					pfOUT[i] = i - curBotBars;
+					if (!criticalPnt)
+						pfOUT[i] = i - curBotBars;
 				}
 
 			}
@@ -244,8 +257,11 @@ void TROUGH_BARS_ZIG(int DataLen, float* pfOUT, float* VAL)
 }
 
 
-void PEAK_BARS_ZIG(int DataLen, float* pfOUT, float* VAL)
+void PEAK_BARS_ZIG(int DataLen, float* pfOUT, float* VAL, float* criticalPoint)
 {
+	// criticalPoint是指： 判定ZIG拐点 的那个决策点，也就是比拐点 要晚一点的那个位置，实现了5个点的拐点幅度
+	bool criticalPnt = ((int)*criticalPoint == 1);
+
 	memset(pfOUT, -1, DataLen * sizeof(float));
 
 	float possibleBot(VAL[0]), possibleTop(VAL[0]);
@@ -297,16 +313,23 @@ void PEAK_BARS_ZIG(int DataLen, float* pfOUT, float* VAL)
 			{
 				posTopBars = i;
 				possibleTop = VAL[i];
-				pfOUT[i] = i - curTopBars;
+				if (!criticalPnt)
+					pfOUT[i] = i - curTopBars;
 			}
 			else
 			{
 				if (VAL[i] <= possibleTop*(1 - (float)ZIG_PERCENT / 100))
 				{
-					for (int j = i; j >= posTopBars; j--)
+					if (criticalPnt)
+						pfOUT[i] = 0;
+					else
 					{
-						pfOUT[j] = j - posTopBars;
+						for (int j = i; j >= posTopBars; j--)
+						{
+							pfOUT[j] = j - posTopBars;
+						}
 					}
+
 					curTopBars = posTopBars;
 					posTopBars = -1;
 					posBotBars = i;
@@ -316,13 +339,15 @@ void PEAK_BARS_ZIG(int DataLen, float* pfOUT, float* VAL)
 				}
 				else 
 				{
-					pfOUT[i] = i - curTopBars;
+					if (!criticalPnt)
+						pfOUT[i] = i - curTopBars;
 				}
 			}
 		}
 		else
 		{ // SEARCHING_BOT
-			pfOUT[i] = i - curTopBars;
+			if (!criticalPnt)
+				pfOUT[i] = i - curTopBars;
 			if (VAL[i] < possibleBot)
 			{
 				posBotBars = i;
@@ -362,6 +387,7 @@ static void merge(int DataLen, float* pfOUT, float* VAL1, float* VAL2)
 
 void FENBI(int DataLen, float* pfOUT, float* LOW, float* HIGH, float* JUNXIAN)
 {
+	float inflectionPoint = 0;
 	float* MID = new float[DataLen] {0};
 	for (int i = 0; i < DataLen; i++)
 	{
@@ -372,7 +398,7 @@ void FENBI(int DataLen, float* pfOUT, float* LOW, float* HIGH, float* JUNXIAN)
 	float* peaks_zig = new float[DataLen] {0};
 	float* peaks = new float[DataLen] {0};
 
-	PEAK_BARS_ZIG(DataLen, peaks_zig, MID);
+	PEAK_BARS_ZIG(DataLen, peaks_zig, MID, &inflectionPoint);
 	PEAK_BARS_JUNXIAN(DataLen, peaks_junxian, MID, JUNXIAN);
 	merge(DataLen, peaks, peaks_zig, peaks_junxian);
 
@@ -380,7 +406,7 @@ void FENBI(int DataLen, float* pfOUT, float* LOW, float* HIGH, float* JUNXIAN)
 	float* trough_zig = new float[DataLen] {0};
 	float* troughs = new float[DataLen] {0};
 
-	TROUGH_BARS_ZIG(DataLen, trough_zig, MID);
+	TROUGH_BARS_ZIG(DataLen, trough_zig, MID, &inflectionPoint);
 	TROUGH_BARS_JUNXIAN(DataLen, trough_junxian, MID, JUNXIAN);
 	merge(DataLen, troughs, trough_zig, trough_junxian);
 
@@ -388,7 +414,8 @@ void FENBI(int DataLen, float* pfOUT, float* LOW, float* HIGH, float* JUNXIAN)
 	for (int i = 0; i < DataLen; i++)
 	{
 		assert(((int)peaks[i] & (int)troughs[i]) == 0);
-		pfOUT[i] = (peaks[i] ? 1 : (troughs[i]?-1:0));
+		pfOUT[i] = (peaks[i] ? 1 : (troughs[i] ? -1 : 0));
+		
 	}
 
 
@@ -397,8 +424,74 @@ void FENBI(int DataLen, float* pfOUT, float* LOW, float* HIGH, float* JUNXIAN)
 	delete[] MID;
 }
 
+void DEBUG_BARS_JUNXIAN(int DataLen, float* pfOUT, float* LOW, float* HIGH, float* JUNXIAN)
+{
+	float* MID = new float[DataLen] {0};
+	for (int i = 0; i < DataLen; i++)
+	{
+		MID[i] = (LOW[i] + HIGH[i]) / 2;
+	}
+
+	float* peaks_junxian = new float[DataLen] {0};
+	float* trough_junxian = new float[DataLen] {0};
+
+	PEAK_BARS_JUNXIAN(DataLen, peaks_junxian, MID, JUNXIAN);
+	TROUGH_BARS_JUNXIAN(DataLen, trough_junxian, MID, JUNXIAN);
+
+	memset(pfOUT, 0, DataLen * sizeof(float));
+	for (int i = 0; i < DataLen; i++)
+	{
+		if (peaks_junxian[i] == 0)
+			assert(trough_junxian[i] != 0);
+		if (trough_junxian[i] == 0)
+			assert(peaks_junxian[i] != 0);
+
+		pfOUT[i] = (peaks_junxian[i] == 0 ? 1 : (trough_junxian[i] == 0 ? -1 : 0));
+	}
+
+	delete[] MID, peaks_junxian, trough_junxian;
+
+}
+void DEBUG_FENBI(int DataLen, float* pfOUT, float* LOW, float* HIGH, float* JUNXIAN)
+{
+	float* peaks_junxian = new float[DataLen] {0};
+	float* trough_junxian = new float[DataLen] {0};
+
+	PEAK_BARS_JUNXIAN(DataLen, peaks_junxian, HIGH, JUNXIAN);
+	TROUGH_BARS_JUNXIAN(DataLen, trough_junxian, LOW, JUNXIAN);
+
+	memset(pfOUT, 0, DataLen * sizeof(float));
+	for (int i = 0; i < DataLen; i++)
+	{
+		if (peaks_junxian[i] == 0)
+			assert(trough_junxian[i] != 0);
+		if (trough_junxian[i] == 0)
+			assert(peaks_junxian[i] != 0);
+
+		pfOUT[i] = (peaks_junxian[i] == 0 ? 1 : (trough_junxian[i] == 0 ? -1 : 0));
+	}
+
+	delete[]  peaks_junxian, trough_junxian;
+
+}
+
+void DEBUG_BARS_ZIG(int DataLen, float* pfOUT, float* VAL, float* criticalPoint)
+{
+	float* peaks_zig = new float[DataLen] {0};
+	float* trough_zig = new float[DataLen] {0};
+
+	PEAK_BARS_ZIG(DataLen, peaks_zig, VAL, criticalPoint);
+	TROUGH_BARS_ZIG(DataLen, trough_zig, VAL, criticalPoint);
+
+	memset(pfOUT, 0, DataLen * sizeof(float));
+	for (int i = 0; i < DataLen; i++)
+	{
+		pfOUT[i] = (peaks_zig[i] == 0 ? 1 : (trough_zig[i] == 0 ? -1 : 0));
+	}
 
 
+	delete[] peaks_zig, trough_zig;
+}
 
 //加载的函数
 PluginTCalcFuncInfo g_CalcFuncSets[] =
@@ -413,6 +506,11 @@ PluginTCalcFuncInfo g_CalcFuncSets[] =
 	{ 6,(pPluginFUNC)&TROUGH_BARS_ZIG },
 
 	{ 7,(pPluginFUNC)&FENBI },
+
+	{ 8,(pPluginFUNC)&DEBUG_BARS_JUNXIAN },
+	{ 9,(pPluginFUNC)&DEBUG_FENBI },
+	{ 10,(pPluginFUNC)&DEBUG_BARS_ZIG },
+
 	{ 0,NULL },
 };
 
