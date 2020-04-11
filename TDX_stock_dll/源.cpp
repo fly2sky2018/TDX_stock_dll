@@ -38,7 +38,7 @@ void TROUGH_BARS_JUNXIAN(int DataLen, float* pfOUT, float* VAL, float* JUNXIAN)
 {
 	// 将 跌破、升破 60分 控盘线，作为划分顶、底的 标准，而不是 ZIG(K,N)采用的按照百分比来确定转向 
 
-	memset(pfOUT, 0, DataLen * sizeof(float));
+	memset(pfOUT, -1, DataLen * sizeof(float));
 
 	float curBotVal(0xffffffff), newBotVal(0xffffffff);
 	int curBotBars(-1), newBotBars(-1);
@@ -91,7 +91,7 @@ void PEAK_BARS_JUNXIAN(int DataLen, float* pfOUT, float* VAL, float* JUNXIAN)
 {
 	// 将 跌破、升破 60分 控盘线，作为划分顶、底的 标准，而不是 ZIG(K,N)采用的按照百分比来确定转向 
 
-	memset(pfOUT, 0, DataLen * sizeof(float));
+	memset(pfOUT, -1, DataLen * sizeof(float));
 
 	float curTopVal(-0xffff), newTopVal(-0xffff);
 	int curTopBars(-1), newTopBars(-1);
@@ -142,7 +142,7 @@ void PEAK_BARS_JUNXIAN(int DataLen, float* pfOUT, float* VAL, float* JUNXIAN)
 
 void TROUGH_BARS_ZIG(int DataLen, float* pfOUT, float* VAL)
 {
-	memset(pfOUT, 0, DataLen * sizeof(float));
+	memset(pfOUT, -1, DataLen * sizeof(float));
 
 	float possibleBot(VAL[0]), possibleTop(VAL[0]);
 	int posBotBars(0), posTopBars(0);
@@ -246,7 +246,7 @@ void TROUGH_BARS_ZIG(int DataLen, float* pfOUT, float* VAL)
 
 void PEAK_BARS_ZIG(int DataLen, float* pfOUT, float* VAL)
 {
-	memset(pfOUT, 0, DataLen * sizeof(float));
+	memset(pfOUT, -1, DataLen * sizeof(float));
 
 	float possibleBot(VAL[0]), possibleTop(VAL[0]);
 	int posBotBars(0), posTopBars(0);
@@ -345,19 +345,56 @@ void PEAK_BARS_ZIG(int DataLen, float* pfOUT, float* VAL)
 	}
 }
 
+static void merge(int DataLen, float* pfOUT, float* VAL1, float* VAL2)
+{
+	for (int i = 0; i < DataLen; i++)
+	{
+		if (VAL1[i] == 0 && VAL2[i] == 0)
+		{
+			pfOUT[i] = 1;
+		}
+		else
+		{
+			pfOUT[i] = 0;
+		}
+	}
+}
 
 void FENBI(int DataLen, float* pfOUT, float* LOW, float* HIGH, float* JUNXIAN)
 {
+	float* MID = new float[DataLen] {0};
+	for (int i = 0; i < DataLen; i++)
+	{
+		MID[i] = (LOW[i] + HIGH[i]) / 2;
+	}
+
+	float* peaks_junxian = new float[DataLen] {0};
+	float* peaks_zig = new float[DataLen] {0};
 	float* peaks = new float[DataLen] {0};
+
+	PEAK_BARS_ZIG(DataLen, peaks_zig, MID);
+	PEAK_BARS_JUNXIAN(DataLen, peaks_junxian, MID, JUNXIAN);
+	merge(DataLen, peaks, peaks_zig, peaks_junxian);
+
+	float* trough_junxian = new float[DataLen] {0};
+	float* trough_zig = new float[DataLen] {0};
 	float* troughs = new float[DataLen] {0};
 
-	TROUGH_BARS_JUNXIAN(DataLen, troughs, LOW, JUNXIAN);
-	PEAK_BARS_JUNXIAN(DataLen, peaks, HIGH, JUNXIAN);
+	TROUGH_BARS_ZIG(DataLen, trough_zig, MID);
+	TROUGH_BARS_JUNXIAN(DataLen, trough_junxian, MID, JUNXIAN);
+	merge(DataLen, troughs, trough_zig, trough_junxian);
+
+	memset(pfOUT, 0, DataLen * sizeof(float));
+	for (int i = 0; i < DataLen; i++)
+	{
+		assert(((int)peaks[i] & (int)troughs[i]) == 0);
+		pfOUT[i] = (peaks[i] ? 1 : (troughs[i]?-1:0));
+	}
 
 
-
-	delete[] peaks;
-	delete[] troughs;
+	delete[] peaks, peaks_zig, peaks_junxian;
+	delete[] troughs, trough_zig, trough_junxian;
+	delete[] MID;
 }
 
 
