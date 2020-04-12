@@ -121,6 +121,7 @@
   <ItemGroup>
     <None Include="..\通达信公式文件\MAZXL-30F_0.tn6" />
     <None Include="..\通达信公式文件\MAZXL-60F_0.tn6" />
+    <None Include="..\通达信公式文件\MAZXL_0.tn6" />
     <None Include="..\通达信公式文件\观察拐点-副图_0.tn6" />
     <None Include="..\通达信公式文件\观察拐点_0.tn6" />
   </ItemGroup>

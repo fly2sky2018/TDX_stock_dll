@@ -49,5 +49,8 @@
     <None Include="..\通达信公式文件\MAZXL-30F_0.tn6">
       <Filter>通达信公式文件</Filter>
     </None>
+    <None Include="..\通达信公式文件\MAZXL_0.tn6">
+      <Filter>通达信公式文件</Filter>
+    </None>
   </ItemGroup>
 </Project>
