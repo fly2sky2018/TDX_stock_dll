@@ -4,7 +4,6 @@
 
 //生成的dll及相关依赖dll请拷贝到通达信安装目录的T0002/dlls/下面,再在公式管理器进行绑定
 static int const START_FROM = 13;
-static int const ZIG_PERCENT = 5;
 
 void TOPRANGE_PERCENT(int DataLen, float* pfOUT, float* HIGH, float* HIGH_ADJUST)
 {
@@ -140,10 +139,11 @@ void PEAK_BARS_JUNXIAN(int DataLen, float* pfOUT, float* VAL, float* JUNXIAN)
 	}
 }
 
-void TROUGH_BARS_ZIG(int DataLen, float* pfOUT, float* VAL, float* criticalPoint)
+void TROUGH_BARS_ZIG(int DataLen, float* pfOUT, float* VAL, float* _ZIG_PERCENT, float* criticalPoint)
 {
 	// criticalPoint是指： 判定ZIG拐点 的那个决策点，也就是比拐点 要晚一点的那个位置，实现了5个点的拐点幅度
 	bool criticalPnt = ((int)*criticalPoint == 1);
+	float ZIG_PERCENT = *_ZIG_PERCENT ? *_ZIG_PERCENT : 5;
 
 	memset(pfOUT, -1, DataLen * sizeof(float));
 
@@ -164,7 +164,7 @@ void TROUGH_BARS_ZIG(int DataLen, float* pfOUT, float* VAL, float* criticalPoint
 				possibleBot = VAL[i];
 				posBotBars = i;
 			}
-			else if (VAL[i] >= possibleBot*(1 + (float)ZIG_PERCENT / 100))
+			else if (VAL[i] >= possibleBot*(1 + ZIG_PERCENT / 100))
 			{
 				curBotBars = posBotBars;
 				posBotBars = -1;
@@ -180,7 +180,7 @@ void TROUGH_BARS_ZIG(int DataLen, float* pfOUT, float* VAL, float* criticalPoint
 				possibleTop = VAL[i];
 				posTopBars = i;
 			}
-			else if (VAL[i] <= possibleTop*(1 - (float)ZIG_PERCENT / 100))
+			else if (VAL[i] <= possibleTop*(1 - ZIG_PERCENT / 100))
 			{
 				curTopBars = posTopBars;
 				posTopBars = -1;
@@ -203,7 +203,7 @@ void TROUGH_BARS_ZIG(int DataLen, float* pfOUT, float* VAL, float* criticalPoint
 			{
 				if (!criticalPnt)
 					pfOUT[i] = i - curBotBars;
-				if (VAL[i] <= possibleTop*(1 - (float)ZIG_PERCENT / 100))
+				if (VAL[i] <= possibleTop*(1 - ZIG_PERCENT / 100))
 				{
 					curTopBars = posTopBars;
 					posTopBars = -1;
@@ -226,7 +226,7 @@ void TROUGH_BARS_ZIG(int DataLen, float* pfOUT, float* VAL, float* criticalPoint
 			else
 			{
 				
-				if (VAL[i] >= possibleBot*(1 + (float)ZIG_PERCENT / 100))
+				if (VAL[i] >= possibleBot*(1 + ZIG_PERCENT / 100))
 				{
 					if (criticalPnt)
 						pfOUT[i] = 0;
@@ -257,10 +257,12 @@ void TROUGH_BARS_ZIG(int DataLen, float* pfOUT, float* VAL, float* criticalPoint
 }
 
 
-void PEAK_BARS_ZIG(int DataLen, float* pfOUT, float* VAL, float* criticalPoint)
+void PEAK_BARS_ZIG(int DataLen, float* pfOUT, float* VAL, float* _ZIG_PERCENT, float* criticalPoint)
 {
 	// criticalPoint是指： 判定ZIG拐点 的那个决策点，也就是比拐点 要晚一点的那个位置，实现了5个点的拐点幅度
 	bool criticalPnt = ((int)*criticalPoint == 1);
+	float ZIG_PERCENT = *_ZIG_PERCENT ? *_ZIG_PERCENT : 5;
+
 
 	memset(pfOUT, -1, DataLen * sizeof(float));
 
@@ -281,7 +283,7 @@ void PEAK_BARS_ZIG(int DataLen, float* pfOUT, float* VAL, float* criticalPoint)
 				possibleBot = VAL[i];
 				posBotBars = i;
 			}
-			else if (VAL[i] >= possibleBot*(1 + (float)ZIG_PERCENT / 100))
+			else if (VAL[i] >= possibleBot*(1 + ZIG_PERCENT / 100))
 			{
 				curBotBars = posBotBars;
 				posBotBars = -1;
@@ -297,7 +299,7 @@ void PEAK_BARS_ZIG(int DataLen, float* pfOUT, float* VAL, float* criticalPoint)
 				possibleTop = VAL[i];
 				posTopBars = i;
 			}
-			else if (VAL[i] <= possibleTop*(1 - (float)ZIG_PERCENT / 100))
+			else if (VAL[i] <= possibleTop*(1 - ZIG_PERCENT / 100))
 			{
 				curTopBars = posTopBars;
 				posTopBars = -1;
@@ -318,7 +320,7 @@ void PEAK_BARS_ZIG(int DataLen, float* pfOUT, float* VAL, float* criticalPoint)
 			}
 			else
 			{
-				if (VAL[i] <= possibleTop*(1 - (float)ZIG_PERCENT / 100))
+				if (VAL[i] <= possibleTop*(1 - ZIG_PERCENT / 100))
 				{
 					if (criticalPnt)
 						pfOUT[i] = 0;
@@ -355,7 +357,7 @@ void PEAK_BARS_ZIG(int DataLen, float* pfOUT, float* VAL, float* criticalPoint)
 			}
 			else
 			{
-				if (VAL[i] >= possibleBot*(1 + (float)ZIG_PERCENT / 100))
+				if (VAL[i] >= possibleBot*(1 + ZIG_PERCENT / 100))
 				{
 					curBotBars = posBotBars;
 					posBotBars = -1;
@@ -388,6 +390,8 @@ static void merge(int DataLen, float* pfOUT, float* VAL1, float* VAL2)
 void FENBI(int DataLen, float* pfOUT, float* LOW, float* HIGH, float* JUNXIAN)
 {
 	float inflectionPoint = 0;
+	float ZIG_PERCENT = 5;
+
 	float* MID = new float[DataLen] {0};
 	for (int i = 0; i < DataLen; i++)
 	{
@@ -398,7 +402,7 @@ void FENBI(int DataLen, float* pfOUT, float* LOW, float* HIGH, float* JUNXIAN)
 	float* peaks_zig = new float[DataLen] {0};
 	float* peaks = new float[DataLen] {0};
 
-	PEAK_BARS_ZIG(DataLen, peaks_zig, MID, &inflectionPoint);
+	PEAK_BARS_ZIG(DataLen, peaks_zig, MID, &ZIG_PERCENT, &inflectionPoint);
 	PEAK_BARS_JUNXIAN(DataLen, peaks_junxian, MID, JUNXIAN);
 	merge(DataLen, peaks, peaks_zig, peaks_junxian);
 
@@ -406,7 +410,7 @@ void FENBI(int DataLen, float* pfOUT, float* LOW, float* HIGH, float* JUNXIAN)
 	float* trough_zig = new float[DataLen] {0};
 	float* troughs = new float[DataLen] {0};
 
-	TROUGH_BARS_ZIG(DataLen, trough_zig, MID, &inflectionPoint);
+	TROUGH_BARS_ZIG(DataLen, trough_zig, MID, &ZIG_PERCENT, &inflectionPoint);
 	TROUGH_BARS_JUNXIAN(DataLen, trough_junxian, MID, JUNXIAN);
 	merge(DataLen, troughs, trough_zig, trough_junxian);
 
@@ -475,13 +479,13 @@ void DEBUG_FENBI(int DataLen, float* pfOUT, float* LOW, float* HIGH, float* JUNX
 
 }
 
-void DEBUG_BARS_ZIG(int DataLen, float* pfOUT, float* VAL, float* criticalPoint)
+void DEBUG_BARS_ZIG(int DataLen, float* pfOUT, float* VAL, float* _ZIG_PERCENT, float* criticalPoint)
 {
 	float* peaks_zig = new float[DataLen] {0};
 	float* trough_zig = new float[DataLen] {0};
 
-	PEAK_BARS_ZIG(DataLen, peaks_zig, VAL, criticalPoint);
-	TROUGH_BARS_ZIG(DataLen, trough_zig, VAL, criticalPoint);
+	PEAK_BARS_ZIG(DataLen, peaks_zig, VAL, _ZIG_PERCENT, criticalPoint);
+	TROUGH_BARS_ZIG(DataLen, trough_zig, VAL, _ZIG_PERCENT, criticalPoint);
 
 	memset(pfOUT, 0, DataLen * sizeof(float));
 	for (int i = 0; i < DataLen; i++)
