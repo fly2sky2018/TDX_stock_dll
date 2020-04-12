@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="通达信公式文件">
+      <UniqueIdentifier>{66a0b317-2381-492c-a84a-77c96ce89ac5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PluginTCalcFunc.h">
@@ -32,5 +35,19 @@
     <ClCompile Include="源.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\通达信公式文件\观察拐点-副图_0.tn6">
+      <Filter>通达信公式文件</Filter>
+    </None>
+    <None Include="..\通达信公式文件\观察拐点_0.tn6">
+      <Filter>通达信公式文件</Filter>
+    </None>
+    <None Include="..\通达信公式文件\MAZXL-60F_0.tn6">
+      <Filter>通达信公式文件</Filter>
+    </None>
+    <None Include="..\通达信公式文件\MAZXL-30F_0.tn6">
+      <Filter>通达信公式文件</Filter>
+    </None>
   </ItemGroup>
 </Project>
